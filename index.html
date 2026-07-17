@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Director O.S. V19.1 — AI Cinema Director Operating System. Generate professional cinematic video prompts with cultural intelligence." />
+  <title>Director O.S. V19.1 — AI Cinema Director</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content glass-panel">
+        <div class="modal-header">
+          <h2 id="label-settings">⚙️ Settings</h2>
+          <button id="btn-close-settings" class="btn-icon" aria-label="Close">✕</button>
+        </div>
+        <div class="modal-body">
+
+
+          <div class="setting-group">
+            <label id="label-language">Language / Bahasa</label>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-lang="en">English</button>
+              <button class="toggle-btn" data-lang="id">Indonesia</button>
+            </div>
+          </div>
+          <div class="setting-group">
+            <label id="label-model">Model</label>
+            <select id="model-select">
+
+              <optgroup label="Grok (xAI)">
+                <option value="grok-4.5">Grok 4.5</option>
+                <option value="grok-3">Grok 3</option>
+                <option value="grok-3-fast">Grok 3 Fast</option>
+              </optgroup>
+              <optgroup label="OpenAI — GPT Series">
+                <option value="gpt-4.1">GPT-4.1 ($2 / $8)</option>
+                <option value="gpt-4.1-mini">GPT-4.1 Mini ($0.4 / $1.6)</option>
+                <option value="gpt-4.1-nano">GPT-4.1 Nano ($0.1 / $0.4)</option>
+                <option value="gpt-4o">GPT-4o ($2.5 / $10)</option>
+                <option value="gpt-4o-mini">GPT-4o Mini ($0.15 / $0.6)</option>
+              </optgroup>
+              <optgroup label="OpenAI — Reasoning (o-series)">
+                <option value="o3">o3 ($2 / $8)</option>
+                <option value="o4-mini">o4-mini ($1.1 / $4.4)</option>
+                <option value="o3-mini">o3-mini ($1.1 / $4.4)</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-save-settings" class="btn-primary">💾 Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="layout">
+      <!-- SIDEBAR -->
+      <aside id="sidebar" class="sidebar glass-panel">
+        <div class="sidebar-header">
+          <div class="logo">
+            <span class="logo-icon">🎬</span>
+            <span class="logo-text">Director<span class="logo-accent">O.S.</span></span>
+          </div>
+          <span class="version-badge">V19.1</span>
+        </div>
+
+        <button id="btn-new-session" class="btn-new-session">
+          <span>＋</span>
+          <span id="label-new-session">New Session</span>
+        </button>
+
+        <div id="session-list" class="session-list">
+          <!-- Sessions will be dynamically inserted here -->
+        </div>
+
+        <div class="sidebar-footer">
+          <button id="btn-settings" class="btn-footer" title="Settings">
+            <span>⚙️</span>
+            <span id="label-settings-btn">Settings</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT (SPLIT PANEL) -->
+      <main class="main-content">
+        
+        <!-- MOBILE TABS (HIDDEN ON DESKTOP) -->
+        <div class="mobile-tabs hidden-desktop">
+          <button class="mobile-tab-btn active" data-tab="chat">💬 Command Center</button>
+          <button class="mobile-tab-btn" data-tab="result">📋 Prompt Result</button>
+        </div>
+
+        <!-- LEFT PANEL: CHAT -->
+        <section id="chat-panel" class="panel chat-panel active-tab">
+          <div class="panel-header glass-panel">
+            <h1 id="chat-title">💬 Command Center</h1>
+            <div class="header-actions">
+              <button id="btn-clear-chat" class="btn-icon" title="Clear Chat">🗑️</button>
+            </div>
+          </div>
+
+          <div id="chat-messages" class="chat-messages">
+            <!-- Welcome message -->
+            <div class="message ai-message welcome-message">
+              <div class="message-avatar">🎬</div>
+              <div class="message-content">
+                <div class="message-bubble glass-bubble">
+                  <p id="welcome-text"><strong>Director O.S. V19.1</strong> — Siap menerima perintah Anda, Sutradara.</p>
+                  <p id="welcome-hint">Ketik ide film Anda. Saya akan mengompilasi prompt sinematik level festival secara otomatis.</p>
+                  <div class="quick-actions">
+                    <button class="quick-btn" data-prompt="Bikin film action silat Jakarta 8 detik">⚔️ Silat Jakarta</button>
+                    <button class="quick-btn" data-prompt="Bikin iklan fashion kebaya 10 detik">👗 Fashion Kebaya</button>
+                    <button class="quick-btn" data-prompt="Bikin film horor Jepang psikopat 7 detik">🔪 J-Horror</button>
+                    <button class="quick-btn" data-prompt="Bikin UGC TikTok cewek Indo 5 detik">📱 UGC Indo</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-input-area">
+            <div class="quick-toggles-row">
+              <div class="mode-selector engine-selector">
+                <span class="mode-label">🎥 Engine:</span>
+                <button class="mode-btn engine-btn active" data-engine="live-action" title="Live Action">🎬 Live</button>
+                <button class="mode-btn engine-btn" data-engine="anime" title="Anime">🎌 Anime</button>
+                <button class="mode-btn engine-btn" data-engine="3d-comic" title="3D Comic">🕷️ 3D</button>
+              </div>
+              <div class="mode-selector">
+                <span class="mode-label">📐 Mode:</span>
+                <button class="mode-btn active" data-mode="mini" title="Prompt under 2000 characters">⚡ Mini</button>
+                <button class="mode-btn" data-mode="standard" title="Prompt under 3000 characters">🎬 Standard</button>
+                <span class="mode-hint" id="mode-hint">&lt; 2K chars</span>
+              </div>
+            </div>
+            <div class="input-container glass-panel">
+              <textarea id="chat-input" placeholder="Ketik perintah film Anda..." rows="1"></textarea>
+              <button id="btn-send" class="btn-send" disabled>
+                <span class="send-icon">➤</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- DIVIDER -->
+        <div id="panel-divider" class="panel-divider"></div>
+
+        <!-- RIGHT PANEL: RESULT -->
+        <section id="result-panel" class="panel result-panel">
+          <div class="panel-header glass-panel">
+            <h1 id="result-title">📋 Prompt Result</h1>
+            <div class="header-actions">
+              <button id="btn-copy" class="btn-action" title="Copy Prompt" disabled>📋 Copy</button>
+              <button id="btn-download-md" class="btn-action" title="Download Markdown" disabled>📥 .md</button>
+              <button id="btn-download-pdf" class="btn-action" title="Download PDF" disabled>📄 PDF</button>
+            </div>
+          </div>
+
+          <div id="result-content" class="result-content">
+            <div class="empty-state">
+              <div class="empty-icon">🎥</div>
+              <h2 id="empty-title">Menunggu Perintah Sutradara</h2>
+              <p id="empty-desc">Hasil prompt sinematik V19.1 akan muncul di sini setelah Anda mengirim perintah di panel chat.</p>
+            </div>
+          </div>
+
+          <!-- AUDIT TABLE (hidden until result) -->
+          <div id="audit-panel" class="audit-panel hidden">
+            <div class="audit-header">
+              <h3>📊 V19.1 Compliance Audit</h3>
+            </div>
+            <div id="audit-table" class="audit-table">
+              <!-- Audit rows inserted dynamically -->
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
