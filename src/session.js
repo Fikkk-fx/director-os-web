@@ -6,7 +6,7 @@ const SETTINGS_KEY = 'director_os_settings';
 export const defaultSettings = {
   language: 'id', // 'id' or 'en'
   engine: 'live-action',
-  model: 'grok-4.5'
+  model: 'gpt-5.6-sol'
 };
 
 export function loadSettings() {
