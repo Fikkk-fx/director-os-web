@@ -40,8 +40,7 @@ export default async function handler(req, res) {
       if (model === 'o3-mini') {
         requestBody.max_completion_tokens = 32000;
       } else if (model.startsWith('gpt-5')) {
-        // GPT-5.x Sol series: higher token limit for advanced reasoning
-        requestBody.temperature = 0.4;
+        // GPT-5.x Sol series: only supports default temperature (1)
         requestBody.max_completion_tokens = 32000;
       } else {
         requestBody.temperature = 0.4;
