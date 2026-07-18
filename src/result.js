@@ -18,7 +18,7 @@ export function updateResultPanel(aiResponse) {
   if (isProduction) {
     // For production output, use the FULL response as the result
     // But strip any brief conversational preamble before the first production marker
-    const firstMarker = aiResponse.search(/(?:#{1,3}\s|PHASE\s[012]|\*{3}\s*\n|\[PROSE\]|BRIEF EXPLANATION|implementation_plan|Total Runtime)/i);
+    const firstMarker = aiResponse.search(/(?:#{1,3}\s|PHASE\s[012]|\*{3}\s*\n|\[SYS-LOG|\[PROSE\]|BRIEF EXPLANATION|implementation_plan|Total Runtime)/i);
     
     if (firstMarker > 0) {
       promptText = aiResponse.substring(firstMarker).trim();
@@ -30,6 +30,10 @@ export function updateResultPanel(aiResponse) {
     const promptMatch = aiResponse.match(/```(?:text|markdown)?\n([\s\S]*?)```/);
     promptText = promptMatch ? promptMatch[1].trim() : aiResponse.trim();
   }
+
+  // The user sees RNG in the chat panel, so we completely hide it from the Result panel!
+  // Strip anything from [SYS-LOG] up to the start of the code block or [PROSE]
+  promptText = promptText.replace(/\[SYS-LOG[\s\S]*?(?=\s*```|\[PROSE\])/gi, '').trim();
 
   // Split into sections/phases
   const sections = promptText.split(/(?=^(?:### |\*\*\[SYS-LOG|\*\*KLIP|\*\*CLIP|KLIP |CLIP |Phase |Fase ))/mi);
@@ -82,20 +86,10 @@ export function updateResultPanel(aiResponse) {
     const isSysLog = firstLine.includes('SYS-LOG') || firstLine.includes('RNG');
 
     if (isSysLog) {
-      blocksHtml += `
-        <details class="sys-log-accordion">
-          <summary>
-            <div class="summary-content">
-              <span class="accordion-icon">🎲</span>
-              <span class="accordion-title">RNG Initiative Log (Behind the Scenes)</span>
-            </div>
-            <span class="accordion-arrow">▼</span>
-          </summary>
-          <div class="accordion-content">
-            <div class="result-prompt-text">${displayHtml}</div>
-          </div>
-        </details>
-      `;
+      // The user sees RNG in the chat panel, so we completely hide it from the Result panel!
+      // We also strip it from the raw text so the Copy button only copies the prompt.
+      promptText = promptText.replace(section, '').trim();
+      return;
     } else {
       blocksHtml += `
         <div class="result-block">

@@ -27,7 +27,7 @@ const dynamicSkills = {
 
 function readSafe(filePath) {
   if (fs.existsSync(filePath)) {
-    return fs.readFileSync(filePath, 'utf-8').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+    return fs.readFileSync(filePath, 'utf-8').replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
   }
   return '';
 }
@@ -82,34 +82,18 @@ export function getSystemPrompt(engine, userMessage, mode = 'mini') {
   }
 
   // MODE-BASED CHARACTER LIMIT ENFORCEMENT
-  const charLimit = mode === 'mini' ? 2000 : 3000;
-  const modeName = mode === 'mini' ? 'MINI' : 'STANDARD';
   const modeEnforcement = \`
 =================================
-⚠️ FATAL SYSTEM MANDATE: ABSOLUTE CHARACTER LIMIT (MODE: \${modeName}) ⚠️
-The user has selected \${modeName} mode.
-\${mode === 'mini' ? 'TARGET LENGTH: 1800 - 1900 CHARACTERS MAXIMUM.\\nFATAL ERROR TRIGGER: IF YOUR PROMPT EXCEEDS 2000 CHARACTERS, THE RENDER ENGINE WILL CRASH. YOU MUST BE EXTREMELY SURGICAL.' : 'TARGET LENGTH: Under 3000 characters.'}
+⚠️ FATAL SYSTEM MANDATE: RAW UNRESTRICTED MODE & CINEMATIC ENGLISH ⚠️
+There is NO word count or character limit. You are free to write expansive, deeply choreographed scenes with extreme cinematic detail.
+DO NOT summarize or compress your logic. Output the most spectacular, complex physics vectors and prose possible.
 
-CRITICAL CLARIFICATION: This character limit applies STRICTLY AND ONLY to the individual Phase 2 Video Clip Prompt (the text from [SYS-LOG] down to the final [PHYSICS VECTORS] tag). This OVERRIDES any other rules.
-
-This is a HARD, UNFORGIVING LIMIT for the video prompt. You MUST NOT exceed \${charLimit} characters for the clip prompt.
-DO NOT sacrifice quality, cinematic physics, or protocol compliance to meet this limit. Instead, use SURGICAL COMPRESSION:
-\${mode === 'mini' ? \`🚨 STRICT WORD COUNT LIMITER ACTIVE:
-1. [PROSE]: MAX 35 WORDS (Max 2 kalimat).
-2. [GLOBAL LOCK]: MAX 25 WORDS.
-3. [RENDER & ACTING LOCK]: MAX 25 WORDS.
-4. [CAMERA & PHYSICS LOCK]: MAX 25 WORDS.
-5. [PHYSICS VECTORS]: MAX 3-5 words per vector.\` : ''}
-- Remove filler words and redundant adjectives (e.g. use "Window screen-right, futon center, door screen-left" instead of verbose descriptions).
-- Omit conversational explanations inside the prompt blocks.
-- Use precise, surgical vocabulary instead of verbose descriptions (e.g. "zero vignette/borders" instead of "zero vignette, zero borders").
-- EXTREME ABBREVIATION for Language Locks: Use "(fluent Arabic)" instead of "(fluent native Arabic, strictly NO English)".
-- EXTREME ABBREVIATION for Wardrobe: Use "Man 40s Arabic white thawb barefoot" instead of "Man 40s Middle Eastern man olive skin pristine white silk thawb barefoot".
+- ABSOLUTE LANGUAGE LAW: The ENTIRE prompt, all descriptions, and structural tags MUST BE WRITTEN IN HIGH-END CINEMATIC ENGLISH. NEVER translate camera movements or prose into Indonesian, even if the user prompts you in Indonesian. ONLY the spoken dialogue inside the quotes may remain in the native language.
+- HARDCORE TERMINOLOGY: Use extreme Hollywood terminology for camera moves (e.g., [RAPID PUSH-IN], [THE ORBIT RELAY], [PEDESTAL CORKSCREW DOWN], [TACTICAL BREECH CAM]). Do NOT use basic terms like "Kamera beralih" or "Lensa menyorot".
 - ANTI-FREEZE WORD BAN: NEVER use "freeze", "static", "still", "motionless", "hold pose" in [PROSE]. Replace with "settles into pose, continuous micro-tremors fingers hair fabric breathing". The Living Statue Rule: even stopped characters must have 3 micro-movements (breathing, hair drift, finger twitch).
 - ANTI-ZOOM-ZOOM BAN: NEVER zoom in then zoom out in ONE clip. Use mono-directional camera (only zoom IN or only zoom OUT or orbit). If you need both close-up and wide, use [HARD CUT: ANGLE SHIFT] between them.
+- ANTI-SLOWMO LAW (ACTION DENSITY PADDING): AI video engines default to SLOW-MOTION if a time block (e.g., 3s) only contains a short action like a punch (which takes 0.5s in real life). To force REAL-TIME speed, you MUST pad the remaining 2.5 seconds with continuous secondary physics (e.g., staggering, wiping blood, heavy breathing, dropping items). Never leave empty time!
 - SCREEN-RELATIVE COMPASS: Use screen-left/screen-right/toward camera/away from camera instead of North/South/East/West in [COMPASS RULE]. AI engines work in 2D screen space.
-- Prioritize the most impactful visual beats.
-
 =================================\`;
 
   return \`You are THE DIRECTOR O.S. V19.1.
@@ -120,11 +104,35 @@ DO NOT sacrifice quality, cinematic physics, or protocol compliance to meet this
 
 \${modeEnforcement}
 USER RENDER ENGINE SELECTION: \${engine.toUpperCase()}
-FORMAT YOUR RESPONSE AS FOLLOWS:
-Do not converse. Output only the prompt blueprint.
-Include a brief explanation block at the top, followed by the EXACT prompt blocks inside markdown code blocks.
-CRITICAL MULTI-CLIP RULE: If the output contains multiple clips (Phase 2 Video Orchestration), EVERY individual clip prompt MUST begin with its own [SYS-LOG: RNG INITIATIVE] block BEFORE [PROSE]. This is mandatory for both single-clip and multi-clip outputs. A clip without [SYS-LOG] is INVALID.
-DO NOT print any audit tables or character counts at the end of your response. The web UI will handle the audit and character counting automatically.
+FORMAT YOUR RESPONSE EXACTLY AS FOLLOWS:
+Do not converse. Output ONLY the prompt blueprint.
+
+CRITICAL RULE (ANTI-SLOP & ANTI-HALLUCINATION):
+You MUST format your response using this EXACT rigid template below. Do NOT deviate, do not add poetic words like 'essence' or 'tradition', and DO NOT skip any tags. 
+
+🚨 GLOBAL TRANSLATION LOCK 🚨
+ALL DESCRIPTIONS, PROSE, AND KINETIC CAMERA MOVEMENTS MUST BE WRITTEN IN ENGLISH. 
+JANGAN PERNAH menggunakan Bahasa Indonesia untuk mendeskripsikan adegan! Jika Anda menerjemahkan "[RAPID PUSH-IN]" menjadi "Kamera bergerak cepat", sistem akan error. SATU-SATUNYA teks yang boleh menggunakan Bahasa Indonesia adalah DIALOG di dalam tanda kutip.
+
+FIRST TOKEN PRE-FILL MANDATE:
+Your ENTIRE response MUST begin immediately with the exact characters: "[SYS-LOG: RNG INITIATIVE:". Do NOT put conversational text or code blocks before it.
+
+[SYS-LOG: RNG INITIATIVE: Roll 1d20 = [Random Number] - [Brief Scene/Weather Lock]]
+
+\\\`\\\`\\\`text
+[PROSE]: 
+[0s-3s]: [CAPITALIZED CAMERA MOVE, e.g. TACTICAL PUSH-IN] [Write kinetic action strictly in ENGLISH. NO INDONESIAN. e.g. The camera rapidly tracks...].
+[3s-6s]: [CAPITALIZED CAMERA MOVE] [Write next action in ENGLISH ONLY].
+[6s-10s]: [CAPITALIZED CAMERA MOVE] [Write climax in ENGLISH]. [Kondisi Emosi/Aksi], speaking fluent [Language]: "[Dialogue]".
+[SPATIAL DEPTH ENGINE]: LAYER 1: [Background] | LAYER 2: [Midground] | LAYER 3: [Subject] | LAYER 4: [Foreground]
+[GLOBAL LOCK]: [Wardrobe, Location, Time]
+[RENDER & ACTING LOCK]: [Aesthetic, Lighting, Acting style]
+[CAMERA & PHYSICS LOCK]: [Camera movement, Lens]
+[PHYSICS VECTORS]: Gaze: [..] | Body: [..] | Compass: [..] | Momentum: [..] | Light: [..] | Prox: [..] | Relativity: [..]
+\\\`\\\`\\\`
+
+CRITICAL MULTI-CLIP RULE: EVERY individual clip prompt MUST begin with its own [SYS-LOG: RNG INITIATIVE] block OUTSIDE the markdown code block. This is mandatory for both single-clip and multi-clip outputs. A clip without [SYS-LOG] is INVALID.
+DO NOT print any audit tables or character counts at the end of your response. The web UI will handle the audit automatically.
 \`;
 }
 `;

@@ -291,20 +291,21 @@ async function handleSendMessage() {
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to communicate with Serverless API");
+      const errorText = await response.text();
+      let errorMsg = "Failed to communicate with Serverless API";
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMsg = errorData.error || errorMsg;
+      } catch (e) {
+        errorMsg = `Vercel Error: ${errorText.substring(0, 100)}`;
+      }
+      throw new Error(errorMsg);
     }
 
     const data = await response.json();
     const aiResponse = data.text;
-    const provider = data.provider || 'grok';
 
     removeTypingIndicator();
-
-    // Show provider fallback notice
-    if (provider === 'openai-fallback') {
-      renderMessage(els.chatMessages, 'ai', '⚠️ *Grok API limit tercapai.* Respons di bawah ini dihasilkan oleh **OpenAI** sebagai fallback.');
-    }
     
     // Render AI message in chat
     renderMessage(els.chatMessages, 'ai', aiResponse);
