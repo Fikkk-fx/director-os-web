@@ -83,8 +83,8 @@ async function callOpenAIAPI(apiKey, model, messages, maxOutputTokens = 16384) {
     messages: openaiMessages,
   };
 
-  if (isReasoningModel(model)) {
-    // Reasoning models use max_completion_tokens instead of max_tokens
+  if (isReasoningModel(model) || isSolModel(model)) {
+    // Reasoning models and GPT-5.6 Sol use max_completion_tokens instead of max_tokens
     requestBody.max_completion_tokens = maxOutputTokens;
   } else {
     requestBody.temperature = 0.4;
