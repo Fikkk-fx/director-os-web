@@ -20,6 +20,18 @@ function mapGrokModelToOpenAI(grokModel) {
   return mapping[grokModel] || 'gpt-4.1-mini';
 }
 
+function downgradeModel(model) {
+  // When TPM limit is hit, try a smaller/cheaper model with higher limits
+  const downgrades = {
+    'gpt-4.1': 'gpt-4.1-mini',
+    'gpt-4.1-mini': 'gpt-4.1-nano',
+    'gpt-4o': 'gpt-4o-mini',
+    'o3': 'o4-mini',
+    'o4-mini': 'o3-mini',
+  };
+  return downgrades[model] || null;
+}
+
 async function callGrokAPI(apiKey, model, messages) {
   const endpoint = 'https://api.x.ai/v1/responses';
   const response = await fetch(endpoint, {
@@ -51,7 +63,7 @@ async function callGrokAPI(apiKey, model, messages) {
   throw new Error('No response generated from Grok.');
 }
 
-async function callOpenAIAPI(apiKey, model, messages) {
+async function callOpenAIAPI(apiKey, model, messages, maxOutputTokens = 16384) {
   // Convert xAI-style "input" messages to OpenAI chat format
   const openaiMessages = messages.map(msg => ({
     role: msg.role,
@@ -68,10 +80,10 @@ async function callOpenAIAPI(apiKey, model, messages) {
 
   if (isReasoningModel(model)) {
     // Reasoning models use max_completion_tokens instead of max_tokens
-    requestBody.max_completion_tokens = 32768;
+    requestBody.max_completion_tokens = maxOutputTokens;
   } else {
     requestBody.temperature = 0.4;
-    requestBody.max_tokens = 32768;
+    requestBody.max_tokens = maxOutputTokens;
   }
 
   const response = await fetch(endpoint, {
@@ -85,7 +97,11 @@ async function callOpenAIAPI(apiKey, model, messages) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error?.message || `OpenAI API error (${response.status})`);
+    const errMsg = errorData.error?.message || '';
+    const error = new Error(errMsg || `OpenAI API error (${response.status})`);
+    error.status = response.status;
+    error.isTPMError = /tokens per min|TPM|too large/i.test(errMsg);
+    throw error;
   }
 
   const data = await response.json();
@@ -93,6 +109,30 @@ async function callOpenAIAPI(apiKey, model, messages) {
     return data.choices[0].message.content;
   }
   throw new Error('No response generated from OpenAI.');
+}
+
+// Wrapper: try OpenAI call, auto-downgrade model on TPM/rate errors
+async function callOpenAIWithRetry(apiKey, model, messages) {
+  try {
+    return { text: await callOpenAIAPI(apiKey, model, messages, 16384), model };
+  } catch (err) {
+    if (err.isTPMError || err.status === 429) {
+      // Strategy 1: retry same model with smaller output
+      try {
+        console.warn(`TPM limit hit for ${model}. Retrying with reduced max_tokens (8192)...`);
+        return { text: await callOpenAIAPI(apiKey, model, messages, 8192), model };
+      } catch (retryErr) {
+        // Strategy 2: downgrade to a smaller model
+        const smallerModel = downgradeModel(model);
+        if (smallerModel && (retryErr.isTPMError || retryErr.status === 429)) {
+          console.warn(`Still over limit. Downgrading ${model} → ${smallerModel}...`);
+          return { text: await callOpenAIAPI(apiKey, smallerModel, messages, 16384), model: smallerModel };
+        }
+        throw retryErr;
+      }
+    }
+    throw err;
+  }
 }
 
 // --- Main Handler ---
@@ -136,8 +176,9 @@ export default async function handler(req, res) {
       if (!openaiApiKey) {
         return res.status(500).json({ error: 'OpenAI API Key is not configured in Vercel ENV.' });
       }
-      resultText = await callOpenAIAPI(openaiApiKey, model, messages);
-      return res.status(200).json({ text: resultText, provider: 'openai' });
+      const result = await callOpenAIWithRetry(openaiApiKey, model, messages);
+      const usedModel = result.model !== model ? ` (downgraded to ${result.model})` : '';
+      return res.status(200).json({ text: result.text, provider: 'openai', note: usedModel || undefined });
     }
 
     // --- Route 2: Grok model (with auto-fallback to OpenAI on rate limit) ---
@@ -146,8 +187,8 @@ export default async function handler(req, res) {
       if (openaiApiKey) {
         const fallbackModel = mapGrokModelToOpenAI(model);
         console.warn(`No Grok API key. Falling back to OpenAI (${fallbackModel}).`);
-        resultText = await callOpenAIAPI(openaiApiKey, fallbackModel, messages);
-        return res.status(200).json({ text: resultText, provider: 'openai-fallback' });
+        const result = await callOpenAIWithRetry(openaiApiKey, fallbackModel, messages);
+        return res.status(200).json({ text: result.text, provider: 'openai-fallback' });
       }
       return res.status(500).json({ error: 'API Key for Grok is not configured in Vercel ENV.' });
     }
@@ -162,8 +203,8 @@ export default async function handler(req, res) {
       if (isRateLimited && openaiApiKey) {
         const fallbackModel = mapGrokModelToOpenAI(model);
         console.warn(`Grok rate-limited (${grokError.status}). Falling back to OpenAI (${fallbackModel}).`);
-        resultText = await callOpenAIAPI(openaiApiKey, fallbackModel, messages);
-        return res.status(200).json({ text: resultText, provider: 'openai-fallback' });
+        const result = await callOpenAIWithRetry(openaiApiKey, fallbackModel, messages);
+        return res.status(200).json({ text: result.text, provider: 'openai-fallback' });
       }
 
       // No fallback available or non-rate-limit error — throw original
