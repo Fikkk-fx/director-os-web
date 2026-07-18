@@ -6,6 +6,10 @@ function isOpenAIModel(model) {
   return model.startsWith('gpt-') || model.startsWith('o1') || model.startsWith('o3') || model.startsWith('o4') || model.startsWith('chatgpt-');
 }
 
+function isSolModel(model) {
+  return model === 'gpt-5.6-sol';
+}
+
 function isReasoningModel(model) {
   return model.startsWith('o1') || model.startsWith('o3') || model.startsWith('o4');
 }
@@ -13,7 +17,7 @@ function isReasoningModel(model) {
 function mapGrokModelToOpenAI(grokModel) {
   // Map Grok models to price-comparable OpenAI models for fallback
   const mapping = {
-    'grok-4.5': 'gpt-4.1',       // Top-tier → GPT-4.1 ($2/$8)
+    'grok-4.5': 'gpt-5.6-sol',    // Top-tier → GPT-5.6 Sol
     'grok-3': 'gpt-4.1',          // Mid-tier → GPT-4.1 ($2/$8)
     'grok-3-fast': 'gpt-4.1-mini', // Fast/cheap → GPT-4.1 Mini ($0.4/$1.6)
   };
@@ -23,6 +27,7 @@ function mapGrokModelToOpenAI(grokModel) {
 function downgradeModel(model) {
   // When TPM limit is hit, try a smaller/cheaper model with higher limits
   const downgrades = {
+    'gpt-5.6-sol': 'gpt-4.1',
     'gpt-4.1': 'gpt-4.1-mini',
     'gpt-4.1-mini': 'gpt-4.1-nano',
     'gpt-4o': 'gpt-4o-mini',
